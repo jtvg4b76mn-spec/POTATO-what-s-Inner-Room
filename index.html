@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What's Your Inner Room? — POTATO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c0c; --fg:#ececec; --dim:#8a8a8a; --line:#2a2a2a; --card:#141414;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg);font-family:"IBM Plex Sans Thai",system-ui,sans-serif;min-height:100%}
+  body{display:flex;justify-content:center}
+  .app{width:100%;max-width:440px;min-height:100vh;padding:28px 22px 40px;display:flex;flex-direction:column;position:relative}
+  .mono{font-family:"IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase;font-size:11px;color:var(--dim)}
+  .screen{display:none;flex:1;flex-direction:column;animation:fade .5s ease}
+  .screen.on{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* intro */
+  .hero{flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px}
+  .hero .qart{max-width:280px;margin:0}
+  h1{font-weight:300;font-size:34px;line-height:1.15;letter-spacing:-.01em}
+  h1 b{font-weight:600}
+  .lede{color:#bdbdbd;font-weight:300;font-size:16px;line-height:1.6}
+  .btn{appearance:none;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font:600 16px "IBM Plex Sans Thai",sans-serif;padding:16px 20px;border-radius:2px;cursor:pointer;width:100%;transition:transform .15s,opacity .15s}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:transparent;color:var(--fg);border-color:#444}
+  .btn.ghost:hover{border-color:var(--fg)}
+
+  /* question */
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .back{background:none;border:0;color:var(--dim);font:inherit;cursor:pointer;padding:4px 0}
+  .bar{height:2px;background:var(--line);margin-bottom:28px;position:relative;overflow:hidden}
+  .bar i{position:absolute;inset:0 auto 0 0;background:var(--fg);transition:width .4s ease}
+  .qart{width:100%;max-width:330px;align-self:center;margin:0 0 20px;position:relative;overflow:hidden;border:1px solid var(--line);aspect-ratio:1/1;background:#0a0a0a}
+  .qart svg{display:block;width:100%;height:100%}
+  .qart .cam{transform-origin:150px 157px;transition:transform .75s cubic-bezier(.55,0,.85,.35)}
+  .qart .panel{transform-box:fill-box;transform-origin:left center;transition:transform .5s cubic-bezier(.3,.7,.4,1)}
+  .qart .spill,.qart .glow{transition:opacity .5s ease}
+  .qart.open .panel{transform:scaleX(-.28) skewY(-14deg)}
+  .qart.open .spill,.qart.open .glow{opacity:1}
+  .qart.enter .cam{transform:scale(9)}
+  .qart .flash{position:absolute;inset:0;background:#f2f2f2;opacity:0;pointer-events:none;transition:opacity .25s ease}
+  .qart.enter .flash{opacity:1;transition-delay:.45s}
+  .qart.arrive .cam{transform:scale(1.35)}
+  .qart.arrive .flash{opacity:1;transition:none}
+  .qart .furn .s{fill:#151515}
+  .qart .tag{position:absolute;left:10px;top:8px;font:500 10px "IBM Plex Mono",monospace;letter-spacing:.14em;color:#777}
+  .qbody{transition:opacity .3s ease,transform .3s ease}
+  .qbody.out{opacity:0;transform:translateY(6px);pointer-events:none}
+  .qbody.pre{opacity:0;transform:translateY(10px);transition:none}
+  @media (prefers-reduced-motion:reduce){.qart *{transition:none!important}}
+  .qtext{font-size:22px;font-weight:400;line-height:1.45;margin-bottom:24px;min-height:64px}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{appearance:none;text-align:left;background:var(--card);color:var(--fg);border:1px solid var(--line);padding:16px 18px;font:400 16px/1.45 "IBM Plex Sans Thai",sans-serif;border-radius:2px;cursor:pointer;display:flex;gap:14px;align-items:baseline;transition:border-color .15s,background .15s}
+  .opt:hover{border-color:#555}
+  .opt.picked{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .opt .k{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--dim)}
+  .opt.picked .k{color:#555}
+
+  /* loading */
+  .walk{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center}
+  .walk svg{width:220px}
+  .walk svg .zoom{animation:zoom 2.2s ease-in forwards;transform-origin:150px 140px}
+  @keyframes zoom{to{transform:scale(2.6);opacity:.2}}
+
+  /* result */
+  .res-art{width:100%;border:1px solid var(--line);margin:10px 0 22px;background:#0a0a0a;overflow:hidden}
+  .res-art svg{display:block;width:100%}
+  .art-img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
+  .qart .art-img{height:100%;transform-origin:50% 52%;transition:transform .75s cubic-bezier(.55,0,.85,.35),filter .5s ease}
+  .qart.open .art-img{transform:scale(1.12);filter:brightness(1.25)}
+  .qart.enter .art-img{transform:scale(4)}
+  .qart.arrive .art-img{transform:scale(1.35);transition:none}
+  .dl{display:block;text-align:center;text-decoration:none}
+  .rname{font-size:32px;font-weight:600;line-height:1.1;margin:6px 0 16px}
+  .quote{font-size:19px;font-weight:300;line-height:1.55;border-left:2px solid var(--fg);padding-left:14px;margin-bottom:26px}
+  .sec{border-top:1px solid var(--line);padding:18px 0}
+  .sec h3{font:500 11px "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  .sec p{font-weight:300;line-height:1.7;color:#d6d6d6}
+  .song{display:flex;align-items:center;gap:14px}
+  .disc{width:46px;height:46px;border-radius:50%;border:1px solid #555;display:grid;place-items:center;flex:none;background:radial-gradient(circle,#ececec 0 3px,#111 4px 100%)}
+  .song b{display:block;font-weight:600;font-size:17px}
+  .song span{color:var(--dim);font-size:14px}
+  .actions{display:flex;flex-direction:column;gap:10px;margin:8px 0 24px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  a.btn{display:block;text-align:center;text-decoration:none}
+  .safety{font-size:13px;color:var(--dim);line-height:1.6;border:1px dashed #333;padding:14px;margin-top:6px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:2px;font-size:14px;opacity:0;transition:.25s;pointer-events:none}
+  .toast.on{opacity:1;transform:translateX(-50%)}
+
+  /* share card modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px;z-index:5}
+  .modal.on{display:flex}
+  .modal img{max-height:72vh;max-width:100%;border:1px solid #333}
+  .modal p{color:#bbb;font-size:14px;text-align:center}
+  .modal .btn{max-width:320px}
+
+  /* all rooms */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .cell{border:1px solid var(--line);padding:6px 6px 8px;font-size:11px;color:var(--dim);text-align:center;line-height:1.3}
+  .cell.me{border-color:var(--fg);color:var(--fg)}
+  .cell svg{width:100%;display:block;margin-bottom:4px}
+  .cell{appearance:none;background:none;font-family:inherit;cursor:pointer;transition:border-color .15s,color .15s}
+  .cell:hover{border-color:#666;color:var(--fg)}
+  .cell .me-tag{display:block;font:500 9px "IBM Plex Mono",monospace;letter-spacing:.12em;margin-top:2px}
+  /* room viewer */
+  .viewer{position:fixed;inset:0;background:var(--bg);z-index:6;display:none;overflow-y:auto}
+  .viewer.on{display:block;animation:fade .35s ease}
+  .vin{max-width:440px;margin:0 auto;padding:20px 22px 40px}
+  .vtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .vtop button{background:none;border:0;color:var(--fg);font:400 15px "IBM Plex Sans Thai",sans-serif;cursor:pointer;padding:6px 0}
+  .vart{border:1px solid var(--line);overflow:hidden;touch-action:pan-y}
+  .vart svg{display:block;width:100%}
+  .vnav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  .badge{display:inline-block;border:1px solid var(--fg);padding:3px 8px;font:500 10px "IBM Plex Mono",monospace;letter-spacing:.14em;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- INTRO -->
+  <section class="screen on" id="s-intro">
+    <div class="mono">POTATO · 12 Rooms (12 Sides of You)</div>
+    <div class="hero">
+      <div class="qart" id="intro-art"></div>
+      <h1>What's Your<br><b>Inner Room?</b></h1>
+      <p class="lede">ทุกคนมีห้องบางห้องที่ไม่ค่อยเปิดให้ใครเห็น<br>ตอบ 7 คำถามสั้น ๆ แล้วไปดูกันว่าห้องข้างในของคุณคือห้องไหน</p>
+      <button class="btn" id="start">เปิดประตูเข้าไป</button>
+      <div class="mono" style="text-align:center">7 คำถาม · ประมาณ 1 นาที</div>
+    </div>
+  </section>
+
+  <!-- QUESTION -->
+  <section class="screen" id="s-q">
+    <div class="top">
+      <button class="back" id="back">← ย้อนกลับ</button>
+      <div class="mono" id="qnum">01 / 07</div>
+    </div>
+    <div class="bar"><i id="prog" style="width:0"></i></div>
+    <div class="qart" id="qart"></div>
+    <div class="qbody" id="qbody">
+      <div class="qtext" id="qtext"></div>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <!-- WALKING -->
+  <section class="screen" id="s-walk">
+    <div class="walk">
+      <div id="walk-art"></div>
+      <div class="mono">กำลังเดินไปที่ห้องของคุณ…</div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="s-res">
+    <div class="mono" id="r-no">ROOM 00 / 12</div>
+    <div class="res-art" id="r-art"></div>
+    <div class="mono">ห้องข้างในของคุณคือ</div>
+    <div class="rname" id="r-name"></div>
+    <div class="quote" id="r-quote"></div>
+
+    <div class="sec">
+      <h3>Hidden Feeling</h3>
+      <p id="r-hidden"></p>
+    </div>
+    <div class="sec">
+      <h3>Way of Dealing</h3>
+      <p id="r-deal"></p>
+    </div>
+    <div class="sec">
+      <h3>Soundtrack ของห้องนี้</h3>
+      <div class="song">
+        <div class="disc"></div>
+        <div><b id="r-song"></b><span>POTATO · DOT / BLACK DOT</span></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="card">สร้างการ์ดไว้แชร์ลงสตอรี่</button>
+      <div class="row2">
+        <a class="btn ghost" id="spotify" href="#" target="_blank" rel="noopener">ฟังบน Spotify</a>
+        <button class="btn ghost" id="copy">คัดลอกคำคม</button>
+      </div>
+      <button class="btn ghost" id="browse">เดินดูห้องอื่น ๆ ทั้ง 12 ห้อง</button>
+      <button class="btn ghost" id="again">เล่นอีกครั้ง</button>
+    </div>
+
+    <div class="sec">
+      <h3>ห้องอื่น ๆ · แตะเพื่อเข้าไปดู</h3>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <p class="safety">ควิซนี้ทำขึ้นเพื่อความบันเทิง ถ้าช่วงนี้รู้สึกหนักใจ ลองคุยกับคนที่ไว้ใจหรือผู้เชี่ยวชาญได้นะ</p>
+  </section>
+</div>
+
+<div class="viewer" id="viewer" role="dialog" aria-label="ดูห้อง">
+  <div class="vin">
+    <div class="vtop"><button id="v-close">← กลับไปห้องของฉัน</button><span class="mono" id="v-no"></span></div>
+    <div class="vart" id="v-art"></div>
+    <div class="vnav"><button class="btn ghost" id="v-prev">← ห้องก่อนหน้า</button><button class="btn ghost" id="v-next">ห้องถัดไป →</button></div>
+    <div id="v-badge"></div>
+    <div class="rname" id="v-name" style="margin-top:14px"></div>
+    <div class="quote" id="v-quote"></div>
+    <div class="sec"><h3>Hidden Feeling</h3><p id="v-hidden"></p></div>
+    <div class="sec"><h3>Way of Dealing</h3><p id="v-deal"></p></div>
+    <div class="sec"><h3>Soundtrack ของห้องนี้</h3>
+      <div class="song"><div class="disc"></div><div><b id="v-song"></b><span>POTATO · DOT / BLACK DOT</span></div></div>
+      <a class="btn ghost" id="v-spotify" href="#" target="_blank" rel="noopener" style="margin-top:14px">ฟังบน Spotify</a>
+    </div>
+    <p class="safety">ควิซนี้ทำขึ้นเพื่อความบันเทิง ถ้าช่วงนี้รู้สึกหนักใจ ลองคุยกับคนที่ไว้ใจหรือผู้เชี่ยวชาญได้นะ</p>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <img id="card-img" alt="การ์ดผลลัพธ์">
+  <p>กดค้างที่รูปเพื่อบันทึก หรือกดปุ่มด้านล่าง แล้วนำไปลงสตอรี่ได้เลย</p>
+  <a class="btn dl" id="dl" download="my-inner-room.png" href="#">บันทึกรูป</a>
+  <button class="btn ghost" id="close">ปิด</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   ใส่ลิงก์รูปภาพตรงนี้ (เว้นว่าง "" = ใช้ภาพลายเส้นเดิม)
+   - รูปควรเป็นสี่เหลี่ยมจัตุรัส (เช่น 1080×1080) ประตูอยู่กลางภาพ
+   - รองรับลิงก์รูปทั่วไป (.jpg .png .webp) และลิงก์แชร์ Google Drive
+     (ต้องตั้งเป็น "Anyone with the link") ระบบจะแปลงให้อัตโนมัติ
+   - ถ้ารูปโหลดไม่ได้ จะกลับไปใช้ภาพลายเส้นเดิมเอง
+   ===================================================================== */
+const IMAGES = {
+  intro: "",                       // ภาพหน้าแรก
+  questions: {                     // ห้องของแต่ละคำถาม (ข้อ 1–7)
+    1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: ""
+  },
+  results: {                       // ห้องผลลัพธ์ 12 ห้อง
+    1: "",  // The Waiting Room
+    2: "",  // The Loop Room
+    3: "",  // The Closed Door
+    4: "",  // The Messy Room
+    5: "",  // The Memory Room
+    6: "",  // The Unknown Room
+    7: "",  // The Empty Room
+    8: "",  // The Rest Room
+    9: "",  // The Private Room
+    10: "", // The Reset Room
+    11: "", // The Unfinished Room
+    12: ""  // The Frameless Room
+  }
+};
+
+/* ---------- image helpers ---------- */
+function directUrl(u){
+  if(!u) return "";
+  u = u.trim();
+  const m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]+)/);
+  return m ? `https://lh3.googleusercontent.com/d/${m[1]}` : u;
+}
+const escAttr = s => s.replace(/&/g,"&amp;").replace(/"/g,"&quot;");
+// returns an <img> (falls back to the drawn room if the link fails) or the drawn SVG
+function artOr(url, svg){
+  const u = directUrl(url);
+  if(!u) return svg;
+  return `<img class="art-img" src="${escAttr(u)}" alt="" loading="eager" data-fallback="${escAttr(svg)}" onerror="this.outerHTML=this.dataset.fallback">`;
+}
+/* ---------- DATA ---------- */
+const ROOMS = {
+  1:{en:"The Waiting Room", song:"ยินดี",
+     quote:"ไม่ได้รอเก่งหรอก แค่ยังมีบางอย่างที่อยากเจอ",
+     hidden:"ลึก ๆ คุณกลัวว่าสิ่งที่รออยู่อาจไม่มาถึงจริง ๆ แต่ก็ยังไม่อยากเลิกรอ เพราะมันยังมีความหมายกับคุณมากพอ",
+     deal:"คุณเก็บความหวังเล็ก ๆ ไว้ใกล้ตัว แล้วรอแบบใจเย็น ระหว่างนั้นก็ยังใช้ชีวิตของตัวเองต่อไป ซึ่งคือความอดทนที่ไม่ใช่ทุกคนจะมี"},
+  2:{en:"The Loop Room", song:"เพลิดเพลิน",
+     quote:"รู้ว่าตอนจบเป็นยังไง แต่ก็ยังอยากดูอีกครั้ง",
+     hidden:"มีบางอย่างที่คุ้นเคยจนคุณยังไม่พร้อมจะปล่อยมือ แม้จะรู้ดีว่ามันจบลงแบบไหน",
+     deal:"เวลาใจไม่นิ่ง คุณจะกลับไปหาเพลงเดิม ที่เดิม หรือเรื่องเดิมที่ทำให้สบายใจ ไม่ใช่การหนีหรอก แค่เป็นการชาร์จใจก่อนออกไปเจอโลกอีกรอบ"},
+  3:{en:"The Closed Door", song:"อย่าทำเป็นเหมือนว่าเข้าใจ",
+     quote:"ไม่ต้องเข้าใจฉันทุกอย่าง แค่จริงใจก็พอ",
+     hidden:"คุณเหนื่อยกับคนที่ทำเป็นเข้าใจ ทั้งที่ไม่ได้ฟังจริง ๆ ประตูเลยปิดไว้ ไม่ใช่เพราะไม่อยากให้ใครเข้ามา แต่เพราะอยากให้คนที่เข้ามาจริงใจ",
+     deal:"คุณกล้าพูดตรง ๆ เวลาไม่โอเค และเปิดใจให้เฉพาะคนที่จริงใจ คนที่ได้เข้ามาในห้องนี้จะรู้เลยว่าความไว้ใจของคุณมีค่าแค่ไหน"},
+  4:{en:"The Messy Room", song:"ชีวิตวุ่นวาย",
+     quote:"ชีวิตจะวุ่นวายแค่ไหน ก็ขอบ่นก่อนหนึ่งที",
+     hidden:"เรื่องเล็กเรื่องใหญ่ทับกันมาเรื่อย ๆ จนบางวันคุณก็แอบหมดแรง แม้จะไม่ค่อยแสดงออกให้ใครเห็น",
+     deal:"คุณบ่นให้สุด ขำให้ได้ แล้วก็ลุยต่อ ห้องอาจรก แต่คุณรู้ทุกครั้งว่าของสำคัญวางอยู่ตรงไหน นี่คือพลังของคนที่ไม่ยอมให้ความวุ่นวายชนะ"},
+  5:{en:"The Memory Room", song:"จำฉันวันนี้",
+     quote:"บางเรื่องไม่ต้องเกิดขึ้นอีก แค่เคยเกิดขึ้นก็ดีแล้ว",
+     hidden:"คุณยังคิดถึงใครบางคน หรือช่วงเวลาหนึ่งที่ผ่านไปแล้ว บางวันมันก็แวะมาเคาะประตูเบา ๆ",
+     deal:"คุณเลือกเก็บความทรงจำดี ๆ ไว้อย่างทะนุถนอม และยอมรับได้ว่าบางเรื่องจบไปแล้ว ห้องนี้จึงอบอุ่น ไม่ได้หม่นอย่างที่ใครคิด"},
+  6:{en:"The Unknown Room", song:"พนักงานใหม่บนโลกใบนี้",
+     quote:"กลัวอยู่เหมือนกัน แต่ก็อยากลองเปิดประตูดู",
+     hidden:"คุณกลัวสิ่งที่ยังไม่รู้ ไม่รู้ว่าจะทำได้ไหม ไม่รู้ว่าข้างหน้ามีอะไร และนั่นเป็นเรื่องปกติมาก ๆ",
+     deal:"คุณไม่รอให้หายกลัวก่อนค่อยเริ่ม แต่ค่อย ๆ ลองไปทีละก้าวทั้งที่ยังกลัว ความกล้าแบบนี้แหละที่พาคุณไปเจอห้องใหม่ ๆ เสมอ"},
+  7:{en:"The Empty Room", song:"ว่างเปล่า",
+     quote:"มีทุกอย่างที่เคยอยากมี แต่ทำไมยังรู้สึกว่าขาดอะไรไป",
+     hidden:"ภายนอกดูเหมือนมีครบ แต่บางครั้งคุณก็รู้สึกว่ายังขาดอะไรบางอย่างที่อธิบายไม่ถูก",
+     deal:"คุณไม่ได้ปล่อยให้ความรู้สึกนี้ผ่านไปเฉย ๆ แต่หยุดถามตัวเองว่าทั้งหมดนี้ทำไปเพื่ออะไร ห้องที่ว่างจึงเป็นห้องที่มีที่เหลือให้เติมสิ่งที่ใช่จริง ๆ"},
+  8:{en:"The Rest Room", song:"นกที่เหนื่อยจะบิน",
+     quote:"บางวันก็ไม่ได้อยากไปไหน แค่อยากพักปีกสักหน่อย",
+     hidden:"คุณเหนื่อยกว่าที่บอกใคร ๆ เพราะเคยชินกับการเป็นคนที่ไหวเสมอ",
+     deal:"คุณกำลังเรียนรู้ที่จะอนุญาตให้ตัวเองได้พัก และไม่ต้องแบกทุกอย่างไว้คนเดียว การพักไม่ได้แปลว่าแพ้ แค่เป็นการเก็บแรงไว้บินต่อ"},
+  9:{en:"The Private Room", song:"ห้อง",
+     quote:"ไม่ได้ปิดกั้นใคร แค่เลือกว่าจะเปิดประตูให้ใคร",
+     hidden:"คุณไม่อยากต้องอธิบายตัวเองให้ทุกคนเข้าใจ บางเรื่องก็อยากเก็บไว้ในพื้นที่ของตัวเอง",
+     deal:"คุณชาร์จแบตในมุมเงียบ ๆ ของตัวเอง กับคนสนิทไม่กี่คน ห้องนี้ไม่ได้ล็อกแน่นหนา แค่มีกุญแจไม่กี่ดอก และคนที่ถือมันไว้คือคนที่คุณเลือกแล้ว"},
+  10:{en:"The Reset Room", song:"พัง",
+     quote:"แก้เมื่อวานไม่ได้ แต่ยังเลือกได้ว่าจะเป็นใครในวันพรุ่งนี้",
+     hidden:"มีความผิดพลาดบางอย่างที่คุณยังคิดวนอยู่ แม้คนอื่นอาจลืมไปนานแล้ว",
+     deal:"คุณค่อย ๆ ยอมรับเมื่อวาน แล้วเลือกเริ่มใหม่ในแบบที่ดีขึ้น ห้องนี้มีรอยร้าว แต่ก็มีประตูบานใหม่เสมอสำหรับคนที่พร้อมเดินต่อ"},
+  11:{en:"The Unfinished Room", song:"Blackdot feat. Sweet Mullet",
+     quote:"ถ้ามีอะไรค้างใจ ก็คุยกันให้จบสักที",
+     hidden:"มีความรู้สึกบางอย่างกับใครบางคนที่ยังค้างอยู่ ไม่จบ ไม่ชัด และมันกวนใจคุณมากกว่าที่คิด",
+     deal:"คุณเลือกที่จะขอคุยให้เคลียร์ แทนที่จะปล่อยให้มันค้างคาไปเรื่อย ๆ ความตรงไปตรงมาแบบนี้ทำให้ทุกเรื่องในห้องของคุณได้มีตอนจบ"},
+  12:{en:"The Frameless Room", song:"บางกรอบ feat. PERSES",
+     quote:"ชีวิตฉัน ไม่จำเป็นต้องอยู่ในกรอบของใคร",
+     hidden:"คุณรู้สึกอึดอัดกับกรอบที่คนอื่นวางไว้ให้ ว่าต้องเป็นแบบนี้ ต้องทำแบบนั้น",
+     deal:"คุณเลือกทางของตัวเอง แม้บางช่วงจะไม่มีใครเดินด้วย ห้องนี้ไม่มีผนังกั้น มีแต่ทางที่คุณออกแบบเองได้ทั้งหมด"}
+};
+
+const QUESTIONS = [
+  {q:"วันที่เหนื่อยมาก ๆ พอกลับถึงห้อง ฉัน…", o:[
+    ["โทรบ่นให้เพื่อนฟัง แล้วค่อยหัวเราะ",4],
+    ["เปิดซีรีส์เรื่องเดิมที่ดูมาหลายรอบ",2],
+    ["เปิดรูปเก่า ๆ ดู คิดถึงช่วงนั้น",5],
+    ["ปิดไฟนอน ปล่อยทุกอย่างไว้ก่อน",8]]},
+  {q:"ส่งข้อความไปนานแล้ว อีกฝ่ายยังไม่ตอบ ฉัน…", o:[
+    ["ยังรอ เผื่อเขาแค่ยังไม่ว่าง",1],
+    ["ย้อนอ่านแชทเก่า ๆ ซ้ำไปมา",2],
+    ["ไม่เป็นไร ฉันก็อยากมีพื้นที่ของตัวเอง",9],
+    ["ทักไปถามตรง ๆ ว่ามีอะไรรึเปล่า",11]]},
+  {q:"มีคนพูดว่า \"เข้าใจนะ\" ทั้งที่ดูออกว่าไม่ได้ฟังเลย ฉัน…", o:[
+    ["บอกตรง ๆ ว่าไม่ต้องทำเป็นเข้าใจ",3],
+    ["รู้สึกโหวง ๆ ทั้งที่มีคนอยู่รอบตัว",7],
+    ["ยังค้างคาใจ อยากคุยให้รู้เรื่องจริง ๆ",11],
+    ["เบื่อต้องเป็นแบบที่คนอื่นคิดว่าใช่",12]]},
+  {q:"จัดห้องแล้วเจอของเก่าจากคนที่เคยสำคัญ ฉัน…", o:[
+    ["เก็บไว้ก่อน กลัวไม่ได้เจอแบบนี้อีก",1],
+    ["ยิ้มให้มัน แล้วเก็บไว้อย่างดี",5],
+    ["ของเยอะแยะ แต่ไม่รู้ว่าเก็บไว้ทำไม",7],
+    ["ปล่อยมันไป แล้วเริ่มจัดห้องใหม่",10]]},
+  {q:"ต้องเริ่มทำสิ่งใหม่ที่ไม่เคยทำมาก่อน ฉัน…", o:[
+    ["วุ่นวายไปหมด แต่ขอลุยไปก่อน",4],
+    ["กลัวนะ แต่ขอลองทีละก้าว",6],
+    ["กลัวพลาดซ้ำเหมือนครั้งก่อน",10],
+    ["ทำในแบบของฉัน ไม่ต้องเหมือนใคร",12]]},
+  {q:"ไปงานที่มีแต่คนไม่รู้จัก ฉัน…", o:[
+    ["คุยด้วยได้ ถ้าไม่ได้แค่ทำเป็นสนิท",3],
+    ["ใจเต้นแรง ไม่รู้จะเริ่มคุยยังไง",6],
+    ["ยิ้มไว้ แต่จริง ๆ อยากกลับไปนอนแล้ว",8],
+    ["หามุมสงบ อยู่กับเพื่อนสนิทคนเดียวพอ",9]]},
+  {q:"ถ้าห้องข้างในของฉันมีประตู มันจะหน้าตาแบบไหน", tie:true, o:[
+    ["ประตูไม้เก่า มีรอยขีดเขียนเต็มไปหมด",[5, 2, 4]],
+    ["ประตูแง้มไว้นิด ๆ รอใครสักคน",[1, 11, 6]],
+    ["ประตูบานหนา มีล็อคหลายชั้น",[3, 9, 8]],
+    ["ไม่มีประตู มีแค่ทางเดินที่ยาวต่อไป",[12, 10, 7]]]}
+];
+
+/* ---------- ROOM ART (monochrome one-point-perspective rooms) ---------- */
+/* ---------- RESULT ROOMS: each drawn from its room's definition (Hidden Feeling + Way of Dealing) ---------- */
+const DOORS = {
+  closed: `<rect x="127" y="110" width="46" height="95" class="s"/><rect x="133" y="118" width="34" height="34" stroke-opacity=".25"/><rect x="133" y="160" width="34" height="38" stroke-opacity=".25"/><circle cx="166" cy="160" r="2.2" fill="#e6e6e6"/>`,
+  chain: `<rect x="127" y="110" width="46" height="95" class="s"/><rect x="133" y="118" width="34" height="34" stroke-opacity=".25"/><rect x="133" y="160" width="34" height="38" stroke-opacity=".25"/>
+          <circle cx="150" cy="134" r="2.5"/><circle cx="166" cy="162" r="2.2" fill="#e6e6e6"/><rect x="161" y="146" width="9" height="5"/><path d="M161 148 q-8 4 -10 10 q-1 4 3 4" stroke-dasharray="2 1.5"/>
+          <rect x="161" y="170" width="9" height="6"/><path d="M165 170 v-3"/>`,
+  ajar: `<rect x="127" y="110" width="46" height="95" fill="#f2f2f2" stroke="none"/><polygon class="s" points="127,110 163,114 163,201 127,205"/><circle cx="158" cy="160" r="2" fill="#e6e6e6"/>
+         <polygon points="163,205 173,205 214,300 176,300" fill="#fff" fill-opacity=".14" stroke="none"/>`,
+  dark: `<rect x="127" y="110" width="46" height="95" fill="#000"/><polygon class="s" points="127,110 106,104 106,211 127,205"/><circle cx="111" cy="160" r="2" fill="#e6e6e6"/>`,
+  nested: `<rect x="127" y="110" width="46" height="95" fill="#0d0d0d"/>
+          <rect x="138" y="134" width="24" height="48" stroke-opacity=".5"/><path d="M127 110 L138 134 M173 110 L162 134 M127 205 L138 182 M173 205 L162 182" stroke-opacity=".35"/>
+          <rect x="145" y="148" width="10" height="20" stroke-opacity=".35"/><path d="M138 134 L145 148 M162 134 L155 148 M138 182 L145 168 M162 182 L155 168" stroke-opacity=".25"/>
+          <rect x="148.5" y="154" width="3" height="7" stroke-opacity=".25"/>`
+};
+const RESULT_ROOMS = {
+  1: {wall:"#121212", amb:.14, door:"closed", f:` 
+      <circle class="s" cx="194" cy="100" r="11"/><path d="M194 100 v-7 M194 100 l6 3"/>
+      <path class="s" d="M110 266 h80 v6 h-80z"/><path class="s" d="M110 266 v-18 h80 v18"/><path d="M116 272 v22 M184 272 v22"/>
+      <ellipse cx="68" cy="284" rx="26" ry="9" fill="#fff" fill-opacity=".1" stroke="none"/>
+      <path class="s" d="M62 290 h12 v-20 h-12z"/><path d="M68 266 q-5 -7 0 -14 q5 7 0 14z" fill="#f2f2f2" stroke="none"/>`},
+  2: {wall:"#121212", amb:.2, door:"nested", f:`
+      <ellipse cx="150" cy="262" rx="62" ry="16" stroke-opacity=".6"/><ellipse cx="150" cy="262" rx="44" ry="11" stroke-opacity=".45"/><ellipse cx="150" cy="262" rx="26" ry="6" stroke-opacity=".3"/>
+      <path class="s" d="M26 286 v-42 h54 v42z"/><rect x="32" y="250" width="42" height="28" fill="#1e1e1e"/><path d="M60 259 a8 8 0 1 0 2 9 M56 257 l5 2 l-1 5"/><path d="M36 286 l-4 10 M70 286 l4 10"/>
+      <path d="M232 296 v-40 M262 296 v-40"/><path class="s" d="M222 256 h50 v-8 h-50z"/><ellipse class="s" cx="247" cy="244" rx="20" ry="5"/><ellipse cx="247" cy="244" rx="3" ry="1"/><path d="M268 242 l-14 3"/>`},
+  3: {wall:"#121212", amb:.12, door:"chain", f:`
+      <polygon class="s" points="28,94 70,108 70,160 28,154"/><path d="M28 94 q10 30 2 60 M70 108 q-10 26 -2 52" stroke-opacity=".7"/><path d="M42 99 v52 M56 104 v52" stroke-opacity=".3"/>
+      <polygon class="s" points="122,212 178,212 186,224 114,224"/>
+      <path class="s" d="M214 266 h30 v4 h-30z"/><path d="M216 270 v24 M242 270 v24 M244 266 v-34"/>`},
+  4: {wall:"#141414", amb:.22, door:"closed", f:`
+      <path class="s" d="M24 296 q4 -26 22 -30 q10 -14 26 -4 q18 0 22 18 q4 8 2 16z"/><path d="M40 280 q12 -6 22 2 M58 268 q8 8 20 4 M34 292 q20 -6 40 0" stroke-opacity=".5"/>
+      <g transform="rotate(-6 236 250)"><path class="s" d="M210 296 v-28 h46 v28z"/><path class="s" d="M216 268 v-24 h38 v24z"/><path class="s" d="M222 244 v-20 h30 v20z"/><path d="M233 268 v28 M235 244 v24 M237 224 v20" stroke-opacity=".4"/></g>
+      <path class="s" d="M92 230 h40 v4 h-40z"/><path d="M96 234 v22 M128 234 v22"/><polygon class="s" points="98,230 104,212 110,222 116,206 124,230"/><path class="s" d="M124 222 h7 v8 h-7z"/>`},
+  5: {wall:"#161514", amb:.3, door:"closed", f:`
+      <path d="M92 86 q58 26 116 0" stroke-opacity=".6"/>
+      <g><rect class="s" x="104" y="90" width="11" height="13" transform="rotate(-8 109 96)"/><rect class="s" x="124" y="96" width="11" height="13"/><rect class="s" x="164" y="96" width="11" height="13" transform="rotate(6 169 102)"/><rect class="s" x="184" y="90" width="11" height="13" transform="rotate(10 189 96)"/></g>
+      <polygon points="74,262 16,112 16,176" fill="#fff" fill-opacity=".09" stroke="none"/><polygon points="16,112 52,126 52,170 16,176" stroke-opacity=".5"/>
+      <path class="s" d="M64 272 h22 v18 h-22z"/><circle class="s" cx="70" cy="268" r="5"/><circle class="s" cx="82" cy="268" r="5"/><path d="M86 278 l-12 -12" stroke-opacity="0"/>
+      <path class="s" d="M200 296 v-28 h62 v28z"/><path class="s" d="M200 268 l8 -22 h62 l-8 22"/><path d="M216 266 q6 -10 12 0 M234 262 l8 -6 l4 8" stroke-opacity=".7"/>`},
+  6: {wall:"#101010", amb:.06, door:"dark", f:`
+      <ellipse cx="190" cy="222" rx="30" ry="10" fill="#fff" fill-opacity=".12" stroke="none"/>
+      <path class="s" d="M184 222 h12 v-14 h-12z"/><path d="M186 208 q4 -8 8 0 M190 204 v-4"/><rect x="187" y="211" width="6" height="7" fill="#f2f2f2" stroke="none"/>
+      <g fill="#e6e6e6" stroke="none" opacity=".55"><ellipse cx="140" cy="292" rx="5" ry="3"/><ellipse cx="160" cy="272" rx="4.5" ry="2.6"/><ellipse cx="142" cy="254" rx="4" ry="2.3"/><ellipse cx="157" cy="238" rx="3.5" ry="2"/><ellipse cx="146" cy="225" rx="3" ry="1.7"/></g>
+      <path class="s" d="M44 296 v-34 q0 -12 14 -12 h12 q14 0 14 12 v34z"/><path d="M58 250 q6 -10 12 0" /><path class="s" d="M50 272 h28 v14 h-28z"/><rect x="60" y="276" width="10" height="6" fill="#f2f2f2" stroke="none"/>`},
+  7: {wall:"#121212", amb:.1, door:"closed", f:`
+      <line x1="150" y1="0" x2="150" y2="54"/><path d="M144 54 h12 l-2 5 h-8z"/><circle cx="150" cy="64" r="5"/>
+      <polygon class="s" points="22,96 72,114 72,214 22,226"/><path d="M22 128 l50 12 M22 162 l50 8 M22 196 l50 4" stroke-opacity=".6"/>
+      <path d="M30 124 v-14 M36 125 v-12 M42 127 v-15 M52 130 v-9 M60 132 v-12 M30 158 l4 -10 h6 l4 10 M54 162 a5 5 0 1 0 0.1 0 M32 192 h14 v-8 h-14z M56 196 v-12" stroke-opacity=".7"/>
+      <path class="s" d="M212 272 v-24 h56 v24"/><path class="s" d="M204 296 v-26 h72 v26z"/><path d="M204 296 v4 M276 296 v4"/>
+      <rect x="122" y="246" width="56" height="34" stroke-dasharray="4 5" stroke-opacity=".7"/>`},
+  8: {wall:"#0f0f11", amb:.1, door:"closed", f:`
+      <polygon class="s" points="226,112 268,98 268,152 226,158"/><circle cx="252" cy="116" r="7" fill="#f2f2f2" stroke="none"/><circle cx="256" cy="113" r="6" fill="#0f0f11" stroke="none"/>
+      <path d="M222 160 l50 -8"/><path class="s" d="M238 157 q4 -7 10 -5 l4 -2 l-2 4 q0 4 -6 5z"/>
+      <path class="s" d="M22 296 v-30 h92 v30z"/><path class="s" d="M22 266 v-22 q0 -4 4 -4 h16 v26"/><path class="s" d="M44 266 q20 -10 70 0 v14 h-70z" /><path class="s" d="M26 252 h16 v8 h-16z"/>
+      <path class="s" d="M128 296 v-26 h22 v26z"/><path d="M139 270 v-18"/><path class="s" d="M131 252 h16 l-4 -12 h-8z"/><ellipse cx="139" cy="252" rx="22" ry="8" fill="#fff" fill-opacity=".08" stroke="none"/>`},
+  9: {wall:"#141312", amb:.18, door:"ajar", f:`
+      <polygon class="s" points="20,98 74,116 74,236 20,256"/><path d="M20 138 l54 14 M20 178 l54 10 M20 218 l54 6" stroke-opacity=".6"/>
+      <path d="M26 136 v-26 M31 137 v-24 M36 139 v-28 M44 141 v-20 M50 143 v-26 M60 145 v-24 M28 176 v-24 M34 177 v-22 M40 178 v-20 M52 181 v-24 M58 182 v-18 M30 216 v-22 M38 217 v-26 M46 218 v-20" stroke-opacity=".6"/>
+      <path class="s" d="M196 260 v-26 q0 -6 6 -6 h30 q6 0 6 6 v26z"/><path class="s" d="M190 294 v-28 q0 -8 8 -8 h36 q8 0 8 8 v28z"/><path d="M190 268 h52 M194 294 v6 M238 294 v6"/><path class="s" d="M200 262 l10 -4 l10 4 l-10 3z"/>
+      <path d="M262 296 h14 M269 296 v-92 q0 -10 -12 -14"/><path class="s" d="M248 194 h18 l-4 -12 h-10z"/><polygon points="248,194 266,194 280,262 230,262" fill="#fff" fill-opacity=".07" stroke="none"/>`},
+  10:{wall:"#131313", amb:.2, door:"closed", f:`
+      <path d="M96 205 l10 -18 l-6 -10 l12 -16 l-4 -14" stroke-opacity=".7"/><path d="M118 300 l14 -30 l-10 -12 l18 -24 l-6 -12" stroke-opacity=".5"/>
+      <rect class="s" x="184" y="94" width="22" height="26"/><rect x="184" y="94" width="22" height="6" fill="#e6e6e6" stroke="none"/><path d="M190 108 h10 M190 113 h6" stroke-opacity=".6"/><path class="s" d="M206 120 l-6 0 l6 -6z"/>
+      <path d="M36 296 l40 -58"/><path class="s" d="M28 296 l8 -8 h16 l-8 8z"/><path class="s" d="M70 234 l14 -6 l2 6 l-12 6z"/>
+      <path class="s" d="M58 292 l6 -5 l4 4z"/><path class="s" d="M70 296 l5 -6 l5 3z"/><path class="s" d="M86 292 l6 -4 l2 5z"/>
+      <path d="M240 296 h20 M250 296 v-96"/><path class="s" d="M236 200 h28 l-6 -22 h-16z"/><polygon points="236,200 264,200 286,296 214,296" fill="#fff" fill-opacity=".09" stroke="none"/>`},
+  11:{wall:"#111111", amb:.1, door:"closed", f:`
+      <path class="s" d="M126 252 h48 l6 10 h-60z"/><path d="M150 262 v30 M138 294 h24"/>
+      <path class="s" d="M136 246 l12 -3 l8 7 l-12 2z"/><path d="M136 246 l10 3 l10 -2" stroke-opacity=".6"/>
+      <path class="s" d="M160 244 h7 v7 h-7z"/>
+      <path class="s" d="M84 270 h28 v4 h-28z"/><path d="M86 274 v20 M110 274 v20 M86 270 v-32"/>
+      <path class="s" d="M188 270 h28 v4 h-28z"/><path d="M190 274 v20 M214 274 v20 M214 270 v-32"/>
+      <path class="s" d="M128 226 q0 -16 22 -16 q22 0 22 16 q0 14 -22 14 l-10 6 l2 -7 q-14 -3 -14 -13z" stroke-dasharray="3 3"/><circle cx="141" cy="226" r="1.6" fill="#e6e6e6"/><circle cx="150" cy="226" r="1.6" fill="#e6e6e6"/><circle cx="159" cy="226" r="1.6" fill="#e6e6e6"/>`},
+  12:{wall:"sky", amb:.25, door:"none", f:`
+      <path d="M118 120 l6 -4 l6 4 M150 100 l5 -3 l5 3 M168 130 l4 -3 l4 3" stroke="#0a0a0a" stroke-width="1.5"/>
+      <path d="M130 205 L112 300 M170 205 L188 300" stroke-opacity=".5"/><path d="M150 210 v8 M150 228 v12 M150 252 v16 M150 280 v20" stroke-opacity=".6"/>
+      <g transform="rotate(-10 60 280)"><polygon class="s" points="26,266 86,262 94,292 30,298"/><polygon points="36,270 78,268 84,288 40,292" stroke-opacity=".5"/></g><path d="M80 260 l10 -6 M92 280 l8 2" stroke-opacity=".6"/>
+      <path class="s" d="M218 268 h30 v4 h-30z"/><path d="M220 272 v22 M246 272 v22 M246 268 v-32"/>`}
+};
+function resultRoom(id, k){
+  const S = RESULT_ROOMS[id]; k = k || ("r"+id);
+  const sky = S.wall==="sky";
+  const back = sky
+    ? `<polygon points="90,75 210,75 210,205 90,205" fill="#121212"/><polygon points="104,84 128,79 160,86 196,80 202,108 198,150 204,196 160,200 120,197 96,200 100,150 94,112" fill="url(#sk${k})"/>`
+    : `<rect x="90" y="75" width="120" height="130" fill="${S.wall}"/>`;
+  return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <style>.s{fill:#151515}</style>
+  <defs>
+    <linearGradient id="fl${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c1c"/><stop offset="1" stop-color="#050505"/></linearGradient>
+    <radialGradient id="gl${k}" cx=".5" cy=".4" r=".55"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sk${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f4f4"/><stop offset="1" stop-color="#bdbdbd"/></linearGradient>
+  </defs>
+  <rect width="300" height="300" fill="#0a0a0a"/>
+  <polygon points="0,300 90,205 210,205 300,300" fill="url(#fl${k})"/>
+  ${back}
+  <ellipse cx="150" cy="120" rx="160" ry="130" fill="url(#gl${k})" opacity="${S.amb}"/>
+  <g stroke="#e6e6e6" stroke-opacity=".35" fill="none">
+    ${sky?'':'<rect x="90" y="75" width="120" height="130"/>'}
+    <line x1="0" y1="0" x2="90" y2="75"/><line x1="300" y1="0" x2="210" y2="75"/>
+    <line x1="0" y1="300" x2="90" y2="205"/><line x1="300" y1="300" x2="210" y2="205"/>
+  </g>
+  <g stroke="#e6e6e6" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    ${S.door==="none"?'':DOORS[S.door]}
+  </g>
+  <g stroke="#e6e6e6" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".9">${S.f}</g>
+</svg>`;
+}
+const roomArt = (id,k) => artOr(IMAGES.results[id], resultRoom(id,k));
+
+/* ---------- STATE ---------- */
+let idx = 0, picks = [];
+const $ = id => document.getElementById(id);
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));window.scrollTo(0,0);}
+
+
+
+/* ---------- DOOR ROOMS: one room per question, walked through door by door ---------- */
+// each room: 3 pieces of furniture that set its mood (+ wall tone and ambient light)
+const ROOMSET = [
+  null,
+  { // 01 back home after a long day: dropped bag, kicked-off shoes, unmade bed + lamp
+    wall:"#121212", amb:.12, f:`
+    <path class="s" d="M150 296 v-30 h96 v30z"/><path class="s" d="M150 266 v-26 q0 -4 4 -4 h16 v30"/><path class="s" d="M176 266 q30 -12 70 -2 v14 h-70z"/><path class="s" d="M154 250 h16 v8 h-16z"/>
+    <path d="M264 296 h18 M273 296 v-56"/><path class="s" d="M262 240 h22 l-5 -16 h-12z"/><ellipse cx="273" cy="244" rx="20" ry="7" fill="#fff" fill-opacity=".08" stroke="none"/>
+    <g transform="rotate(-14 62 274)"><path class="s" d="M40 290 v-28 q0 -8 8 -8 h28 q8 0 8 8 v28z"/><path d="M52 254 q10 -12 20 0"/></g>
+    <path class="s" d="M100 290 q0 -8 10 -8 h10 l6 6 h6 v4 h-32z"/><g transform="rotate(30 126 270)"><path class="s" d="M112 274 q0 -6 8 -6 h8 l5 5 h5 v3 h-26z"/></g>`},
+  { // 02 the unanswered message: side table + glowing phone, armchair, wall clock
+    wall:"#0f0f10", amb:.08, f:`
+    <ellipse cx="72" cy="238" rx="26" ry="12" fill="#fff" fill-opacity=".12" stroke="none"/>
+    <path class="s" d="M50 248 h44 v5 h-44z"/><path d="M56 253 v40 M88 253 v40"/>
+    <rect x="64" y="242" width="16" height="6" rx="1" fill="#f2f2f2" stroke="none"/>
+    <path class="s" d="M212 254 v-24 q0 -6 6 -6 h34 q6 0 6 6 v24z"/>
+    <path class="s" d="M205 292 v-30 q0 -8 8 -8 h44 q8 0 8 8 v30z"/><path d="M205 266 h60 M209 292 v6 M261 292 v6"/>
+    <circle class="s" cx="192" cy="104" r="11"/><path d="M192 104 v-7 M192 104 l5 3"/>`},
+  { // 03 "I understand": long sofa with one cushion, mirror, standing lamp
+    wall:"#131313", amb:.2, f:`
+    <polygon class="s" points="30,94 66,106 66,150 30,146"/><polygon points="35,101 61,110 61,145 35,142" stroke-opacity=".3"/>
+    <path class="s" d="M32 268 v-20 h72 v20z"/><path class="s" d="M28 294 v-26 h80 v26z"/>
+    <path class="s" d="M22 294 v-34 h10 v34z"/><path class="s" d="M104 294 v-34 h10 v34z"/><path class="s" d="M80 268 l4 -14 h14 l-2 14z"/>
+    <ellipse cx="250" cy="292" rx="34" ry="7" fill="#fff" fill-opacity=".07" stroke="none"/>
+    <path d="M240 296 h20 M250 296 v-118"/><path class="s" d="M236 178 h28 l-6 -22 h-16z"/>`},
+  { // 04 the old door of memories: rocking chair, record player, photo frames
+    wall:"#171615", amb:.32, f:`
+    <rect class="s" x="96" y="90" width="16" height="20"/><rect class="s" x="103" y="116" width="20" height="14"/><rect class="s" x="186" y="96" width="18" height="22"/>
+    <path d="M36 294 q36 10 72 0 M48 296 l4 -28 M96 296 l-4 -28"/><path class="s" d="M50 268 v-40 q22 -8 42 0 v40z"/><path class="s" d="M46 268 h50 v5 h-50z"/>
+    <path d="M60 264 v-32 M71 264 v-34 M82 264 v-32" stroke-opacity=".45"/>
+    <path class="s" d="M196 296 v-46 h66 v46z"/><path d="M229 250 v46 M196 273 h66" stroke-opacity=".45"/>
+    <ellipse class="s" cx="226" cy="246" rx="20" ry="5"/><ellipse cx="226" cy="246" rx="3" ry="1"/><path d="M252 244 l-16 2"/>`},
+  { // 06 starting something new: moving boxes, step ladder, a small sprout
+    wall:"#161616", amb:.38, f:`
+    <path class="s" d="M28 296 v-30 h40 v30z"/><path class="s" d="M68 296 v-24 h34 v24z"/><path class="s" d="M38 266 v-24 h34 v24z"/>
+    <path d="M48 266 v30 M85 272 v24 M55 242 v24" stroke-opacity=".4"/>
+    <path d="M222 296 l14 -92 l14 92 M226 270 h20 M229 248 h14 M232 226 h8"/>
+    <path class="s" d="M182 216 h12 l-2 10 h-8z"/><path d="M188 216 v-9 q-7 -1 -7 -8 q7 0 7 7 q0 -9 7 -9 q0 7 -7 9"/>`},
+  { // 06 an event full of strangers: string lights, high table with glasses, a lone chair in the corner
+    wall:"#131313", amb:.2, f:`
+    <path d="M10 40 q45 30 90 40 M200 80 q45 -10 90 -40" stroke-opacity=".6"/>
+    <g fill="#f2f2f2" stroke="none"><circle cx="28" cy="52" r="2.4"/><circle cx="50" cy="63" r="2.4"/><circle cx="72" cy="72" r="2.4"/><circle cx="92" cy="78" r="2.4"/><circle cx="210" cy="78" r="2.4"/><circle cx="232" cy="72" r="2.4"/><circle cx="254" cy="62" r="2.4"/><circle cx="276" cy="49" r="2.4"/></g>
+    <ellipse class="s" cx="96" cy="246" rx="28" ry="6"/><path d="M96 252 v42 M84 296 h24"/>
+    <path class="s" d="M84 246 l2 -14 h6 l2 14z"/><path class="s" d="M100 246 l2 -14 h6 l2 14z"/><path class="s" d="M90 232 h4 v-6 h-4z" stroke-opacity="0"/>
+    <path class="s" d="M246 272 h26 v4 h-26z"/><path d="M248 276 v20 M270 276 v20 M272 272 v-30"/>`},
+  { // 08 the door of your inner room: rug, coat rack, key hooks
+    wall:"#141414", amb:.26, f:`
+    <polygon class="s" points="118,214 182,214 208,252 92,252"/><polygon points="126,219 174,219 194,247 106,247" stroke-opacity=".4"/>
+    <path d="M58 296 h28 M72 296 v-110 M72 190 l-12 -8 M72 190 l12 -8"/><path class="s" d="M62 196 q10 -8 20 0 l5 44 h-30z"/>
+    <path d="M182 120 h22 M186 120 v4 M193 120 v4 M200 120 v4"/>
+    <circle cx="186" cy="130" r="3"/><path d="M186 133 v7 h2"/><circle cx="200" cy="130" r="3"/><path d="M200 133 v7 h2"/>`}
+];
+function doorRoom(n){
+  const S = ROOMSET[n] || {wall:"#121212",amb:.15,f:""};
+  return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dfl${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c1c"/><stop offset="1" stop-color="#050505"/></linearGradient>
+    <radialGradient id="dgl${n}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g class="cam">
+    <rect x="-300" y="-300" width="900" height="900" fill="#0a0a0a"/>
+    <polygon points="0,300 90,205 210,205 300,300" fill="url(#dfl${n})"/>
+    <rect x="90" y="75" width="120" height="130" fill="${S.wall}"/>
+    <ellipse cx="150" cy="120" rx="150" ry="120" fill="url(#dgl${n})" opacity="${S.amb}"/>
+    <ellipse class="glow" cx="150" cy="160" rx="110" ry="110" fill="url(#dgl${n})" opacity="0"/>
+    <polygon class="spill" points="127,205 173,205 214,300 86,300" fill="#fff" fill-opacity=".09" opacity="0"/>
+    <g stroke="#e6e6e6" stroke-opacity=".35" fill="none">
+      <rect x="90" y="75" width="120" height="130"/>
+      <line x1="0" y1="0" x2="90" y2="75"/><line x1="300" y1="0" x2="210" y2="75"/>
+      <line x1="0" y1="300" x2="90" y2="205"/><line x1="300" y1="300" x2="210" y2="205"/>
+    </g>
+    <rect x="127" y="110" width="46" height="95" fill="#f2f2f2"/>
+    <g class="panel">
+      <rect x="127" y="110" width="46" height="95" fill="#161616" stroke="#e6e6e6" stroke-width="1.4"/>
+      <rect x="133" y="118" width="34" height="34" fill="none" stroke="#e6e6e6" stroke-opacity=".25"/>
+      <rect x="133" y="160" width="34" height="38" fill="none" stroke="#e6e6e6" stroke-opacity=".25"/>
+      <circle cx="166" cy="160" r="2.2" fill="#e6e6e6"/>
+    </g>
+    <rect x="127" y="110" width="46" height="95" fill="none" stroke="#e6e6e6" stroke-width="1.4"/>
+    <g class="furn" stroke="#e6e6e6" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".85">${S.f}</g>
+  </g>
+</svg>`;
+}
+$("intro-art").innerHTML = artOr(IMAGES.intro, doorRoom(0)) + `<div class="flash"></div>`;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wait = ms => new Promise(r=>setTimeout(r, reduceMotion ? 0 : ms));
+let busy = false;
+
+function paintArt(n){
+  $("qart").className = "qart";
+  $("qart").innerHTML = artOr(IMAGES.questions[n], doorRoom(n)) + `<div class="tag">ROOM ${String(n).padStart(2,"0")}</div><div class="flash"></div>`;
+}
+function renderQ(arrive){
+  const Q = QUESTIONS[idx];
+  $("qnum").textContent = String(idx+1).padStart(2,"0")+" / "+String(QUESTIONS.length).padStart(2,"0");
+  $("prog").style.width = (idx/QUESTIONS.length*100)+"%";
+  $("back").style.visibility = idx ? "visible" : "hidden";
+  $("qtext").textContent = Q.q;
+  paintArt(idx+1);
+  $("opts").innerHTML = "";
+  Q.o.forEach((o,i)=>{
+    const b = document.createElement("button");
+    b.className = "opt"+(picks[idx]===i?" picked":"");
+    b.innerHTML = `<span class="k">${"ABCD"[i]}</span><span>${o[0]}</span>`;
+    b.onclick = ()=>choose(i,b);
+    $("opts").appendChild(b);
+  });
+  const art = $("qart"), body = $("qbody");
+  if(arrive && !reduceMotion){
+    // start "just through the doorway": bright + slightly zoomed, then settle into the new room
+    art.classList.add("arrive"); body.className = "qbody pre";
+    void art.offsetWidth;
+    requestAnimationFrame(()=>{ art.classList.remove("arrive"); setTimeout(()=>{ body.className = "qbody"; }, 250); });
+  } else body.className = "qbody";
+}
+// door opens -> walk into the light -> next room
+async function walkThrough(){
+  const art = $("qart");
+  $("qbody").classList.add("out");
+  window.scrollTo({top:0,behavior:reduceMotion?"auto":"smooth"});
+  await wait(150);
+  art.classList.add("open");
+  await wait(520);
+  art.classList.add("enter");
+  await wait(780);
+}
+async function choose(i,b){
+  if(busy) return; busy = true;
+  picks[idx]=i; picks.length=idx+1;
+  document.querySelectorAll(".opt").forEach(x=>x.classList.remove("picked"));
+  b.classList.add("picked");
+  await wait(220);
+  await walkThrough();
+  if(idx<QUESTIONS.length-1){ idx++; renderQ(true); }
+  else finish();
+  busy = false;
+}
+
+function compute(){
+  // each room appears 2–3 times in Q1–7, so score = share of that room's options picked (keeps all 12 rooms equally likely)
+  const N = QUESTIONS.length - 1; // last question = door tiebreaker
+  const slots = {}; for(let q=0;q<N;q++) QUESTIONS[q].o.forEach(o=>slots[o[1]]=(slots[o[1]]||0)+1);
+  const score = {}; for(let r=1;r<=12;r++) score[r]=0;
+  for(let q=0;q<N;q++){ const r = QUESTIONS[q].o[picks[q]][1]; score[r] += 1/slots[r]; }
+  const max = Math.max(...Object.values(score));
+  let tied = Object.keys(score).filter(r=>Math.abs(score[r]-max)<1e-9).map(Number);
+  if(tied.length>1){ // Q8 = tiebreaker
+    const door = QUESTIONS[N].o[picks[N]][1];
+    const hit = tied.filter(r=>door.includes(r));
+    if(hit.length) tied = hit;
+  }
+  if(tied.length>1){ tied.sort((a,b)=>a-b); return tied[picks.reduce((x,y,i)=>x*5+y+i,0)%tied.length]; }
+  return tied[0];
+}
+
+let result = 1;
+function finish(){
+  result = compute();
+  renderResult();
+  // land in the result room the same way: from bright doorway light into the room
+  const a = $("r-art").firstElementChild;
+  if(!reduceMotion){
+    a.animate([{filter:"brightness(6)",transform:"scale(1.35)"},{filter:"brightness(1)",transform:"scale(1)"}],{duration:900,easing:"cubic-bezier(.2,.7,.3,1)"});
+  }
+}
+
+function renderResult(){
+  const R = ROOMS[result];
+  $("r-no").textContent = `ROOM ${String(result).padStart(2,"0")} / 12`;
+  $("r-art").innerHTML = roomArt(result,"res");
+  $("r-name").textContent = R.en;
+  $("r-quote").textContent = "“"+R.quote+"”";
+  $("r-hidden").textContent = R.hidden;
+  $("r-deal").textContent = R.deal;
+  $("r-song").textContent = R.song;
+  $("spotify").href = "https://open.spotify.com/search/" + encodeURIComponent("POTATO " + R.song.split(" feat.")[0]);
+  $("grid").innerHTML = Object.keys(ROOMS).map(id=>`<button class="cell${+id===result?" me":""}" data-id="${id}">${roomArt(+id,"g"+id)}${ROOMS[id].en.replace("The ","")}${+id===result?'<span class="me-tag">ห้องของคุณ</span>':''}</button>`).join("");
+  $("grid").querySelectorAll(".cell").forEach(c=>c.onclick=()=>openRoom(+c.dataset.id));
+  show("s-res");
+}
+
+/* ---------- SHARE CARD (9:16 canvas) ---------- */
+function wrap(ctx,text,x,y,maxW,lh){
+  // Thai has no spaces between words: break on spaces first, then by characters if needed
+  const tokens = text.split(/(\s+)/);
+  let line="", lines=[];
+  for(const t of tokens){
+    const test=line+t;
+    if(ctx.measureText(test).width>maxW && line.trim()){ lines.push(line.trim()); line=t.trimStart(); }
+    else line=test;
+  }
+  if(line.trim()) lines.push(line.trim());
+  const out=[];
+  for(const l of lines){
+    if(ctx.measureText(l).width<=maxW){out.push(l);continue;}
+    let cur=""; for(const ch of [...l]){ if(ctx.measureText(cur+ch).width>maxW){out.push(cur);cur=ch;} else cur+=ch; } if(cur) out.push(cur);
+  }
+  out.forEach((l,i)=>ctx.fillText(l,x,y+i*lh));
+  return out.length*lh;
+}
+async function makeCard(){
+  const R = ROOMS[result];
+  const W=1080,H=1920, c=document.createElement("canvas"); c.width=W;c.height=H;
+  const ctx=c.getContext("2d");
+  try{ await Promise.all([document.fonts.load('600 80px "IBM Plex Sans Thai"'),document.fonts.load('300 50px "IBM Plex Sans Thai"'),document.fonts.load('400 30px "IBM Plex Mono"')]); }catch(e){}
+  ctx.fillStyle="#0a0a0a"; ctx.fillRect(0,0,W,H);
+  // room art
+  const load = (src, cors) => new Promise(res=>{ const im=new Image(); if(cors) im.crossOrigin="anonymous"; im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; });
+  const svgSrc = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(resultRoom(result,"card"));
+  let img = null;
+  const link = directUrl(IMAGES.results[result]);
+  if(link){
+    img = await load(link, true);
+    if(img){ try{ const t=document.createElement("canvas").getContext("2d"); t.drawImage(img,0,0,1,1); t.getImageData(0,0,1,1); }catch(e){ img=null; } } // host must allow CORS to export the card
+  }
+  if(img){ const s=Math.min(img.naturalWidth,img.naturalHeight); ctx.drawImage(img,(img.naturalWidth-s)/2,(img.naturalHeight-s)/2,s,s,0,0,W,W); } // linked photo: centre-crop to square
+  else { img = await load(svgSrc, false); if(img) ctx.drawImage(img,0,0,W,W); }
+  const g=ctx.createLinearGradient(0,W-260,0,W); g.addColorStop(0,"rgba(10,10,10,0)"); g.addColorStop(1,"#0a0a0a");
+  ctx.fillStyle=g; ctx.fillRect(0,W-260,W,260);
+  const pad=90;
+  ctx.fillStyle="#8a8a8a"; ctx.font='400 30px "IBM Plex Mono", monospace';
+  ctx.fillText(`ROOM ${String(result).padStart(2,"0")} / 12  ·  WHAT'S YOUR INNER ROOM?`, pad, 110);
+  ctx.fillStyle="#ececec"; ctx.font='600 92px "IBM Plex Sans Thai", sans-serif';
+  ctx.fillText(R.en, pad, 1150);
+  ctx.fillRect(pad,1215,4,170);
+  ctx.font='300 52px "IBM Plex Sans Thai", sans-serif';
+  wrap(ctx,"“"+R.quote+"”",pad+36,1270,W-pad*2-40,76);
+  // soundtrack
+  ctx.strokeStyle="#333"; ctx.beginPath(); ctx.moveTo(pad,1560); ctx.lineTo(W-pad,1560); ctx.stroke();
+  ctx.fillStyle="#8a8a8a"; ctx.font='400 28px "IBM Plex Mono", monospace'; ctx.fillText("SOUNDTRACK",pad,1625);
+  ctx.beginPath(); ctx.arc(pad+50,1720,50,0,Math.PI*2); ctx.fillStyle="#111"; ctx.fill(); ctx.strokeStyle="#555"; ctx.stroke();
+  ctx.beginPath(); ctx.arc(pad+50,1720,7,0,Math.PI*2); ctx.fillStyle="#ececec"; ctx.fill();
+  ctx.fillStyle="#ececec"; ctx.font='600 46px "IBM Plex Sans Thai", sans-serif'; ctx.fillText(R.song,pad+130,1712);
+  ctx.fillStyle="#8a8a8a"; ctx.font='400 32px "IBM Plex Sans Thai", sans-serif'; ctx.fillText("POTATO · DOT / BLACK DOT",pad+130,1762);
+  return c.toDataURL("image/png");
+}
+
+/* ---------- EVENTS ---------- */
+$("start").onclick = async ()=>{
+  if(busy) return; busy=true;
+  const a=$("intro-art"); a.classList.add("open"); await wait(520); a.classList.add("enter"); await wait(780);
+  idx=0;picks=[];show("s-q");renderQ(true);
+  a.className="qart"; busy=false;
+};
+$("back").onclick = ()=>{ if(idx>0 && !busy){idx--;renderQ(false);} };
+$("again").onclick = ()=>{idx=0;picks=[];show("s-q");renderQ(true);};
+$("card").onclick = async ()=>{ $("card").textContent="กำลังสร้างการ์ด…"; const url = await makeCard(); $("card-img").src = url; $("dl").href = url; $("dl").download = `inner-room-${String(result).padStart(2,"0")}.png`; $("modal").classList.add("on"); $("card").textContent="สร้างการ์ดไว้แชร์ลงสตอรี่"; };
+$("close").onclick = ()=>$("modal").classList.remove("on");
+$("copy").onclick = async ()=>{
+  const R=ROOMS[result];
+  const t=`ห้องข้างในของฉันคือ ${R.en}\n“${R.quote}”\n🎧 ${R.song} — POTATO\n#WhatsYourInnerRoom`;
+  try{ await navigator.clipboard.writeText(t); toast("คัดลอกแล้ว"); }catch(e){ toast("คัดลอกไม่ได้ในหน้านี้"); }
+};
+/* ---------- ROOM VIEWER: walk through the other 11 rooms ---------- */
+let vid = 1;
+const spotifyUrl = R => "https://open.spotify.com/search/" + encodeURIComponent("POTATO " + R.song.split(" feat.")[0]);
+function paintRoom(id, dir){
+  vid = ((id-1+12)%12)+1;
+  const R = ROOMS[vid];
+  $("v-no").textContent = `ROOM ${String(vid).padStart(2,"0")} / 12`;
+  $("v-art").innerHTML = roomArt(vid,"v"+vid);
+  $("v-badge").innerHTML = vid===result ? '<span class="badge">ห้องของคุณ</span>' : '';
+  $("v-name").textContent = R.en;
+  $("v-quote").textContent = "“"+R.quote+"”";
+  $("v-hidden").textContent = R.hidden;
+  $("v-deal").textContent = R.deal;
+  $("v-song").textContent = R.song;
+  $("v-spotify").href = spotifyUrl(R);
+  if(dir && !reduceMotion){
+    $("v-art").firstElementChild.animate([{opacity:0,transform:`translateX(${dir*40}px) scale(1.08)`},{opacity:1,transform:"none"}],{duration:420,easing:"cubic-bezier(.2,.7,.3,1)"});
+  }
+}
+function openRoom(id){ paintRoom(id, 0); $("viewer").classList.add("on"); $("viewer").scrollTop = 0; document.body.style.overflow="hidden"; }
+function closeRoom(){ $("viewer").classList.remove("on"); document.body.style.overflow=""; }
+$("v-close").onclick = closeRoom;
+$("v-prev").onclick = ()=>{ paintRoom(vid-1,-1); $("viewer").scrollTop = 0; };
+$("v-next").onclick = ()=>{ paintRoom(vid+1, 1); $("viewer").scrollTop = 0; };
+$("browse").onclick = ()=>openRoom(result===12?1:result+1);
+(()=>{ let x0=null; const el=$("v-art");
+  el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
+  el.addEventListener("touchend",e=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; x0=null;
+    if(Math.abs(dx)>40) dx<0 ? $("v-next").click() : $("v-prev").click(); });
+})();
+document.addEventListener("keydown",e=>{ if(!$("viewer").classList.contains("on")) return;
+  if(e.key==="ArrowRight") $("v-next").click(); else if(e.key==="ArrowLeft") $("v-prev").click(); else if(e.key==="Escape") closeRoom(); });
+
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1600);}
+</script>
+</body>
+</html>
