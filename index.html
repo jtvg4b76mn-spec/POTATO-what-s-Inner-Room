@@ -241,6 +241,7 @@
         <div class="disc"></div>
         <div><b id="r-song"></b><span>POTATO · DOT / BLACK DOT</span></div>
       </div>
+      <div id="r-player"></div>
     </div>
 
     <div class="actions">
@@ -273,7 +274,7 @@
     <div class="sec"><h3>Hidden Feeling</h3><p id="v-hidden"></p></div>
     <div class="sec"><h3>Way of Dealing</h3><p id="v-deal"></p></div>
     <div class="sec"><h3>Soundtrack ของห้องนี้</h3>
-      <div class="song"><div class="disc"></div><div><b id="v-song"></b><span>POTATO · DOT / BLACK DOT</span></div></div>
+      <div class="song"><div class="disc"></div><div><b id="v-song"></b><span>POTATO · DOT / BLACK DOT</span></div></div><div id="v-player"></div>
       <a class="btn ghost" id="v-spotify" href="#" target="_blank" rel="noopener" style="margin-top:14px">ฟังบน Spotify</a>
     </div>
     <p class="safety">ควิซนี้ทำขึ้นเพื่อความบันเทิง ถ้าช่วงนี้รู้สึกหนักใจ ลองคุยกับคนที่ไว้ใจหรือผู้เชี่ยวชาญได้นะ</p>
@@ -561,6 +562,34 @@ function resultRoom(id, k){
 const roomArt = (id,k) => artOr(IMAGES.results[id], resultRoom(id,k));
 
 
+
+/* ======================= ลิงก์เพลง Spotify =======================
+   วางลิงก์เพลงของแต่ละห้อง (ในแอป Spotify: ⋯ → Share → Copy Song Link)
+   เช่น 8: "https://open.spotify.com/track/xxxxxxxx?si=..."
+   เว้นว่าง "" = ปุ่มจะเปิดหน้าค้นหาชื่อเพลงแทน
+   ================================================================= */
+const SPOTIFY = {
+  1: "https://open.spotify.com/track/04a3NWMo2rIxyVaE2JkS4f",  // ยินดี
+  2: "https://open.spotify.com/track/6B7ggklMW5LcAuly1jIAXF",  // เพลิดเพลิน
+  3: "https://open.spotify.com/track/33xutbbGww8qhZ0lVau77k",  // อย่าทำเป็นเหมือนว่าเข้าใจ
+  4: "https://open.spotify.com/track/0y3CxY3NY7oA2KL0Jv6HX6",  // ชีวิตวุ่นวาย
+  5: "https://open.spotify.com/track/2HCfv3yRTYCUXG6IS7zNkV",  // จำฉันวันนี้
+  6: "https://open.spotify.com/track/6OPeYC2yZ84Zl4cU2qVQVu",  // พนักงานใหม่บนโลกใบนี้
+  7: "https://open.spotify.com/track/09HnazqicobwgZJTOVcELi",  // ว่างเปล่า
+  8: "https://open.spotify.com/track/7DJudNkp5tuJEkAg10hYlW",  // นกที่เหนื่อยจะบิน
+  9: "https://open.spotify.com/track/70UIKLxJG6FJRLRFnSHOeP",  // ห้อง
+  10: "https://open.spotify.com/track/1wEwmBhbWPhgK7pD88SJEY", // พัง
+  11: "https://open.spotify.com/track/519eifUw8XpSpnwwzMbE2O", // Blackdot feat. Sweet Mullet
+  12: "https://open.spotify.com/track/5nnBQRBellYCLW7TEvpARg"  // บางกรอบ feat. PERSES
+};
+const spotifyTrackId = id => ((SPOTIFY[id]||"").match(/track\/([A-Za-z0-9]+)/)||[])[1];
+const spotifyLink = id => spotifyTrackId(id) ? `https://open.spotify.com/track/${spotifyTrackId(id)}`
+  : "https://open.spotify.com/search/" + encodeURIComponent("POTATO " + ROOMS[id].song.split(" feat.")[0]);
+function spotifyEmbed(boxId, id){
+  const box=$(boxId); if(!box) return; const t=spotifyTrackId(id);
+  box.innerHTML = t ? `<iframe src="https://open.spotify.com/embed/track/${t}?utm_source=generator&theme=0" width="100%" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:12px;margin-top:14px"></iframe>` : "";
+}
+
 /* ======================= GoatCounter (นับผู้เล่น) =======================
    ใส่ชื่อเว็บ GoatCounter ของคุณ เช่น "innerroom" ถ้าลิงก์แดชบอร์ดคือ https://innerroom.goatcounter.com
    เว้นว่าง "" = ปิดการนับ
@@ -784,7 +813,7 @@ function renderResult(){
   $("r-hidden").textContent = R.hidden;
   $("r-deal").textContent = R.deal;
   $("r-song").textContent = R.song;
-  $("spotify").href = "https://open.spotify.com/search/" + encodeURIComponent("POTATO " + R.song.split(" feat.")[0]);
+  $("spotify").href = spotifyLink(result); spotifyEmbed("r-player", result);
   $("grid").innerHTML = Object.keys(ROOMS).map(id=>`<button class="cell${+id===result?" me":""}" data-id="${id}">${roomArt(+id,"g"+id)}${ROOMS[id].en.replace("The ","")}${+id===result?'<span class="me-tag">ห้องของคุณ</span>':''}</button>`).join("");
   $("grid").querySelectorAll(".cell").forEach(c=>c.onclick=()=>openRoom(+c.dataset.id));
   show("s-res");
@@ -872,7 +901,7 @@ $("copy").onclick = async ()=>{ track("copy-quote","คัดลอกคำค�
 };
 /* ---------- ROOM VIEWER: walk through the other 11 rooms ---------- */
 let vid = 1;
-const spotifyUrl = R => "https://open.spotify.com/search/" + encodeURIComponent("POTATO " + R.song.split(" feat.")[0]);
+
 function paintRoom(id, dir){
   vid = ((id-1+12)%12)+1;
   const R = ROOMS[vid];
@@ -885,7 +914,7 @@ function paintRoom(id, dir){
   $("v-hidden").textContent = R.hidden;
   $("v-deal").textContent = R.deal;
   $("v-song").textContent = R.song;
-  $("v-spotify").href = spotifyUrl(R);
+  $("v-spotify").href = spotifyLink(vid); spotifyEmbed("v-player", vid);
   if(dir && !reduceMotion){
     $("viewer").animate([{opacity:.3},{opacity:1}],{duration:420,easing:"cubic-bezier(.2,.7,.3,1)"});
   }
