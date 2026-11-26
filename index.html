@@ -153,15 +153,15 @@
   /* ---- question rooms: full-bleed monochrome photos ---- */
   #q-bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:#0a0a0a;opacity:0;transition:opacity .5s ease;pointer-events:none}
   #q-bg.on{opacity:1}
-  #q-bg .qb-img{position:absolute;inset:0;background:#0a0a0a center/cover no-repeat;transform:scale(1);transition:transform .95s cubic-bezier(.55,0,.85,.35),filter .95s ease}
+  #q-bg .qb-img{position:absolute;inset:0;background:#0a0a0a center/cover no-repeat;transition:filter 1.25s ease-in-out,opacity 1.25s ease-in-out}
   #q-bg .qb-shade{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,8,8,.55) 0%,rgba(8,8,8,0) 18%,rgba(8,8,8,0) 42%,rgba(8,8,8,.7) 66%,rgba(8,8,8,.93) 100%)}
-  #q-bg .qb-flash{position:absolute;inset:0;background:#f4f4f2;opacity:0;transition:opacity .35s ease}
+  #q-bg .qb-flash{position:absolute;inset:0;background:#e9e9e6;opacity:0;transition:opacity .9s ease-in-out}
   #q-bg.drift{animation:qdrift 18s cubic-bezier(.3,0,.6,1) forwards}
   @keyframes qdrift{from{transform:scale(1)}to{transform:scale(1.22)}}
-  #q-bg.go .qb-img{transform:scale(6.5);filter:brightness(1.7);transition-duration:1.05s}
-  #q-bg.go .qb-flash{opacity:1;transition-delay:.7s}
-  #q-bg.arrive .qb-img{transform:scale(1.25);filter:brightness(1.4);transition:none}
-  #q-bg.arrive .qb-flash{opacity:1;transition:none}
+  #q-bg.go .qb-img{filter:blur(14px) brightness(1.5);opacity:0;transition-duration:1s}
+  #q-bg.go .qb-flash{opacity:.22}
+  #q-bg.arrive .qb-img{filter:blur(14px) brightness(1.5);opacity:0;transition:none}
+  #q-bg.arrive .qb-flash{opacity:.22;transition:none}
   .app{position:relative;z-index:1}
   body.qphoto #s-q .qart{display:none}
   body.qphoto #s-q .qbody{margin-top:auto}
@@ -385,38 +385,38 @@ const ROOMS = {
 
 const QUESTIONS = [
   {q:"วันที่เหนื่อยมาก ๆ พอกลับถึงห้อง ฉัน…", o:[
-    ["โทรบ่นให้เพื่อนฟัง แล้วค่อยหัวเราะ",4],
+    ["อยากระบายให้ใครสักคนฟัง",4],
     ["เปิดซีรีส์เรื่องเดิมที่ดูมาหลายรอบ",2],
-    ["เปิดรูปเก่า ๆ ดู คิดถึงช่วงนั้น",5],
+    ["กลับไปดูรูปที่เคยโพสลงในไอจี",5],
     ["ปิดไฟนอน ปล่อยทุกอย่างไว้ก่อน",8]]},
   {q:"ส่งข้อความไปนานแล้ว อีกฝ่ายยังไม่ตอบ ฉัน…", o:[
-    ["ยังรอ เผื่อเขาแค่ยังไม่ว่าง",1],
+    ["รอได้ เขาอาจจะยุ่งอยู่",1],
     ["ย้อนอ่านแชทเก่า ๆ ซ้ำไปมา",2],
     ["ไม่เป็นไร ฉันก็อยากมีพื้นที่ของตัวเอง",9],
-    ["ทักไปถามตรง ๆ ว่ามีอะไรรึเปล่า",11]]},
+    ["ทักไปถามตรง ๆ ว่าเป็นอะไรรึเปล่า",11]]},
   {q:"มีคนพูดว่า \"เข้าใจนะ\" ทั้งที่ดูออกว่าไม่ได้ฟังเลย ฉัน…", o:[
-    ["บอกตรง ๆ ว่าไม่ต้องทำเป็นเข้าใจ",3],
-    ["รู้สึกโหวง ๆ ทั้งที่มีคนอยู่รอบตัว",7],
-    ["ยังค้างคาใจ อยากคุยให้รู้เรื่องจริง ๆ",11],
-    ["เบื่อต้องเป็นแบบที่คนอื่นคิดว่าใช่",12]]},
+    ["บอกตรง ๆ ว่าไม่เข้าใจก็ไม่เป็นไร",3],
+    ["ไม่มีใครเข้าใจเลย",7],
+    ["พยายามอธิบายให้เขาเข้าใจ",11],
+    ["ไม่เก็บมาคิดอะไรทั้งนั้น",12]]},
   {q:"จัดห้องแล้วเจอของเก่าจากคนที่เคยสำคัญ ฉัน…", o:[
-    ["เก็บไว้ก่อน กลัวไม่ได้เจอแบบนี้อีก",1],
-    ["ยิ้มให้มัน แล้วเก็บไว้อย่างดี",5],
-    ["ของเยอะแยะ แต่ไม่รู้ว่าเก็บไว้ทำไม",7],
+    ["ขอเก็บไว้ก่อน กลัวไม่ได้เจอแบบนี้อีก",1],
+    ["นึกถึงช่วงเวลาที่เคยมี แล้วเก็บของไว้อย่างดี",5],
+    ["ไม่รู้ว่าจะเก็บไว้ดีไหม",7],
     ["ปล่อยมันไป แล้วเริ่มจัดห้องใหม่",10]]},
   {q:"ต้องเริ่มทำสิ่งใหม่ที่ไม่เคยทำมาก่อน ฉัน…", o:[
-    ["วุ่นวายไปหมด แต่ขอลุยไปก่อน",4],
-    ["กลัวนะ แต่ขอลองทีละก้าว",6],
-    ["กลัวพลาดซ้ำเหมือนครั้งก่อน",10],
-    ["ทำในแบบของฉัน ไม่ต้องเหมือนใคร",12]]},
+    ["ตื่นเต้นมาก",4],
+    ["กลัวนะ แต่ขอลองดูละกัน",6],
+    ["จะพลาดเหมือนที่ผ่านมาไหมนะ",10],
+    ["ทำได้อยู่แล้ว เรื่องแค่นี้",12]]},
   {q:"ไปงานที่มีแต่คนไม่รู้จัก ฉัน…", o:[
-    ["คุยด้วยได้ ถ้าไม่ได้แค่ทำเป็นสนิท",3],
+    ["รอคนอื่นทักก่อน",3],
     ["ใจเต้นแรง ไม่รู้จะเริ่มคุยยังไง",6],
-    ["ยิ้มไว้ แต่จริง ๆ อยากกลับไปนอนแล้ว",8],
-    ["หามุมสงบ อยู่กับเพื่อนสนิทคนเดียวพอ",9]]},
+    ["อยากกลับไปนอนแล้ว",8],
+    ["หามุมเงียบๆ แล้วมองไปรอบๆ",9]]},
   {q:"ถ้าห้องข้างในของฉันมีประตู มันจะหน้าตาแบบไหน", tie:true, o:[
-    ["ประตูไม้เก่า มีรอยขีดเขียนเต็มไปหมด",[5, 2, 4]],
-    ["ประตูแง้มไว้นิด ๆ รอใครสักคน",[1, 11, 6]],
+    ["ประตูห้องที่เคยอยู่ตอนเด็ก",[5, 2, 4]],
+    ["ประตูที่เปิดแง้มๆเหมือนกำลังรอใคร",[1, 11, 6]],
     ["ประตูบานหนา มีล็อคหลายชั้น",[3, 9, 8]],
     ["ไม่มีประตู มีแค่ทางเดินที่ยาวต่อไป",[12, 10, 7]]]}
 ];
@@ -559,6 +559,21 @@ function resultRoom(id, k){
 </svg>`;
 }
 const roomArt = (id,k) => artOr(IMAGES.results[id], resultRoom(id,k));
+
+
+/* ======================= GoatCounter (นับผู้เล่น) =======================
+   ใส่ชื่อเว็บ GoatCounter ของคุณ เช่น "innerroom" ถ้าลิงก์แดชบอร์ดคือ https://innerroom.goatcounter.com
+   เว้นว่าง "" = ปิดการนับ
+   ======================================================================= */
+const GOATCOUNTER_CODE = "";
+(function(){
+  if(!GOATCOUNTER_CODE) return;
+  const s=document.createElement("script"); s.async=true; s.src="https://gc.zgo.at/count.js";
+  s.dataset.goatcounter=`https://${GOATCOUNTER_CODE}.goatcounter.com/count`; document.head.appendChild(s);
+})();
+function track(path, title){
+  try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path, title:title||path, event:true}); }catch(e){}
+}
 
 /* ---------- STATE ---------- */
 let idx = 0, picks = [];
@@ -707,7 +722,7 @@ function renderQ(arrive){
     // start "just through the doorway": bright + slightly zoomed, then settle into the new room
     art.classList.add("arrive"); body.className = "qbody pre";
     void art.offsetWidth;
-    requestAnimationFrame(()=>{ art.classList.remove("arrive"); setTimeout(()=>{ body.className = "qbody"; }, 250); });
+    requestAnimationFrame(()=>{ art.classList.remove("arrive"); setTimeout(()=>{ body.className = "qbody"; }, 450); });
   } else body.className = "qbody";
 }
 // door opens -> walk into the light -> next room
@@ -716,7 +731,7 @@ async function walkThrough(){
   $("qbody").classList.add("out");
   window.scrollTo({top:0,behavior:reduceMotion?"auto":"smooth"});
   await wait(150);
-  if(document.body.classList.contains("qphoto")){ $("q-bg").classList.add("go"); await wait(1100); return; }
+  if(document.body.classList.contains("qphoto")){ $("q-bg").classList.add("go"); await wait(1000); return; }
   art.classList.add("open");
   await wait(520);
   art.classList.add("enter");
@@ -725,6 +740,7 @@ async function walkThrough(){
 async function choose(i,b){
   if(busy) return; busy = true;
   picks[idx]=i; picks.length=idx+1;
+  track(`answer/q${idx+1}-${"ABCD"[i]}`, `ข้อ ${idx+1} ตอบ ${"ABCD"[i]}: ${QUESTIONS[idx].o[i][0]}`);
   document.querySelectorAll(".opt").forEach(x=>x.classList.remove("picked"));
   b.classList.add("picked");
   await wait(220);
@@ -754,6 +770,7 @@ function compute(){
 let result = 1;
 async function finish(){
   result = compute();
+  track(`result/${String(result).padStart(2,"0")}`, `ผลลัพธ์: ${ROOMS[result].en}`);
   qbgOff();          // straight from the last question's light into the result
   renderResult();
 }
@@ -839,16 +856,16 @@ async function makeCard(){
 
 /* ---------- EVENTS ---------- */
 $("start").onclick = async ()=>{
-  if(busy) return; busy=true;
+  if(busy) return; busy=true; track("start","เริ่มเล่น");
   const a=$("intro-art"); a.classList.add("open"); await wait(520); a.classList.add("enter"); await wait(780);
   idx=0;picks=[];show("s-q");renderQ(true);
   a.className = IMAGES.intro ? "qart poster" : "qart"; busy=false;
 };
 $("back").onclick = ()=>{ if(idx>0 && !busy){idx--;renderQ(false);} };
-$("again").onclick = ()=>{idx=0;picks=[];show("s-q");renderQ(true);};
-$("card").onclick = async ()=>{ $("card").textContent="กำลังสร้างการ์ด…"; const url = await makeCard(); $("card-img").src = url; $("dl").href = url; $("dl").download = `inner-room-${String(result).padStart(2,"0")}.png`; $("modal").classList.add("on"); $("card").textContent="สร้างการ์ดไว้แชร์ลงสตอรี่"; };
+$("again").onclick = ()=>{ track("play-again","เล่นอีกครั้ง");idx=0;picks=[];show("s-q");renderQ(true);};
+$("card").onclick = async ()=>{ track(`share-card/${String(result).padStart(2,"0")}`,"สร้างการ์ดสตอรี่"); $("card").textContent="กำลังสร้างการ์ด…"; const url = await makeCard(); $("card-img").src = url; $("dl").href = url; $("dl").download = `inner-room-${String(result).padStart(2,"0")}.png`; $("modal").classList.add("on"); $("card").textContent="สร้างการ์ดไว้แชร์ลงสตอรี่"; };
 $("close").onclick = ()=>$("modal").classList.remove("on");
-$("copy").onclick = async ()=>{
+$("copy").onclick = async ()=>{ track("copy-quote","คัดลอกคำคม");
   const R=ROOMS[result];
   const t=`ห้องข้างในของฉันคือ ${R.en}\n“${R.quote}”\n🎧 ${R.song} — POTATO\n#WhatsYourInnerRoom`;
   try{ await navigator.clipboard.writeText(t); toast("คัดลอกแล้ว"); }catch(e){ toast("คัดลอกไม่ได้ในหน้านี้"); }
@@ -878,7 +895,7 @@ function closeRoom(){ $("viewer").classList.remove("on"); document.body.style.ov
 $("v-close").onclick = closeRoom;
 $("v-prev").onclick = ()=>{ paintRoom(vid-1,-1); $("viewer").scrollTop = 0; };
 $("v-next").onclick = ()=>{ paintRoom(vid+1, 1); $("viewer").scrollTop = 0; };
-$("browse").onclick = ()=>openRoom(result===12?1:result+1);
+$("browse").onclick = ()=>{ track("browse-rooms","ดูห้องอื่น"); return openRoom(result===12?1:result+1); };
 (()=>{ let x0=null; const el=$("v-art");
   el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
   el.addEventListener("touchend",e=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; x0=null;
@@ -887,6 +904,7 @@ $("browse").onclick = ()=>openRoom(result===12?1:result+1);
 document.addEventListener("keydown",e=>{ if(!$("viewer").classList.contains("on")) return;
   if(e.key==="ArrowRight") $("v-next").click(); else if(e.key==="ArrowLeft") $("v-prev").click(); else if(e.key==="Escape") closeRoom(); });
 
+document.addEventListener("click",e=>{ const a=e.target.closest("#spotify,#v-spotify"); if(a) track(`spotify/${String(a.id==="spotify"?result:vid).padStart(2,"0")}`,"กดฟังบน Spotify"); });
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1600);}
 </script>
 </body>
