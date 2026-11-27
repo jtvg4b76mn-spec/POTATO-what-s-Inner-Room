@@ -228,11 +228,11 @@
     <div class="quote" id="r-quote"></div>
 
     <div class="sec">
-      <h3>Hidden Feeling</h3>
+      <h3>ความรู้สึกที่ถูกซ่อนเร้น</h3>
       <p id="r-hidden"></p>
     </div>
     <div class="sec">
-      <h3>Way of Dealing</h3>
+      <h3>วิธีรับมือในแบบของคุณ</h3>
       <p id="r-deal"></p>
     </div>
     <div class="sec">
@@ -271,8 +271,8 @@
     <div id="v-badge"></div>
     <div class="rname" id="v-name" style="margin-top:14px"></div>
     <div class="quote" id="v-quote"></div>
-    <div class="sec"><h3>Hidden Feeling</h3><p id="v-hidden"></p></div>
-    <div class="sec"><h3>Way of Dealing</h3><p id="v-deal"></p></div>
+    <div class="sec"><h3>ความรู้สึกที่ถูกซ่อนเร้น</h3><p id="v-hidden"></p></div>
+    <div class="sec"><h3>วิธีรับมือในแบบของคุณ</h3><p id="v-deal"></p></div>
     <div class="sec"><h3>Soundtrack ของห้องนี้</h3>
       <div class="song"><div class="disc"></div><div><b id="v-song"></b><span>POTATO · DOT / BLACK DOT</span></div></div><div id="v-player"></div>
       <a class="btn ghost" id="v-spotify" href="#" target="_blank" rel="noopener" style="margin-top:14px">ฟังบน Spotify</a>
@@ -820,7 +820,7 @@ function renderResult(){
 }
 
 /* ---------- SHARE CARD (9:16 canvas) ---------- */
-function wrap(ctx,text,x,y,maxW,lh){
+function wrap(ctx,text,x,y,maxW,lh,dry){
   // Thai has no spaces between words: break on spaces first, then by characters if needed
   const tokens = text.split(/(\s+)/);
   let line="", lines=[];
@@ -833,9 +833,10 @@ function wrap(ctx,text,x,y,maxW,lh){
   const out=[];
   for(const l of lines){
     if(ctx.measureText(l).width<=maxW){out.push(l);continue;}
-    let cur=""; for(const ch of [...l]){ if(ctx.measureText(cur+ch).width>maxW){out.push(cur);cur=ch;} else cur+=ch; } if(cur) out.push(cur);
+    const parts = window.Intl&&Intl.Segmenter ? [...new Intl.Segmenter('th',{granularity:'word'}).segment(l)].map(s=>s.segment) : [...l];
+    let cur=""; for(const ch of parts){ if(ctx.measureText(cur+ch).width>maxW){out.push(cur);cur=ch;} else cur+=ch; } if(cur) out.push(cur);
   }
-  out.forEach((l,i)=>ctx.fillText(l,x,y+i*lh));
+  if(!dry) out.forEach((l,i)=>ctx.fillText(l,x,y+i*lh));
   return out.length*lh;
 }
 async function makeCard(){
@@ -854,32 +855,50 @@ async function makeCard(){
     if(img){ try{ const t=document.createElement("canvas").getContext("2d"); t.drawImage(img,0,0,1,1); t.getImageData(0,0,1,1); }catch(e){ img=null; } } // host must allow CORS to export the card
   }
   if(!img) img = await load(svgSrc, false);
-  if(img){ // photo or drawn room: cover a 3:4 area at the top, then fade into the text
-    const AH=1440, r=Math.max(W/img.naturalWidth, AH/img.naturalHeight), dw=img.naturalWidth*r, dh=img.naturalHeight*r;
-    ctx.drawImage(img,(W-dw)/2,(AH-dh)/2,dw,dh);
-    const g=ctx.createLinearGradient(0,820,0,AH); g.addColorStop(0,"rgba(10,10,10,0)"); g.addColorStop(.45,"rgba(10,10,10,.85)"); g.addColorStop(1,"#0a0a0a");
-    ctx.fillStyle=g; ctx.fillRect(0,820,W,AH-820+2);
-    const t=ctx.createLinearGradient(0,0,0,200); t.addColorStop(0,"rgba(10,10,10,.6)"); t.addColorStop(1,"rgba(10,10,10,0)"); ctx.fillStyle=t; ctx.fillRect(0,0,W,200);
-  } else {
-    img = await load(svgSrc, false); if(img) ctx.drawImage(img,0,0,W,W);
-    const g=ctx.createLinearGradient(0,W-260,0,W); g.addColorStop(0,"rgba(10,10,10,0)"); g.addColorStop(1,"#0a0a0a");
-    ctx.fillStyle=g; ctx.fillRect(0,W-260,W,260);
+  const AH=860;
+  if(img){ // photo or drawn room: cover the top area, then fade into the text
+    const r=Math.max(W/img.naturalWidth, AH/img.naturalHeight), dw=img.naturalWidth*r, dh=img.naturalHeight*r;
+    ctx.save(); ctx.beginPath(); ctx.rect(0,0,W,AH); ctx.clip(); ctx.drawImage(img,(W-dw)/2,(AH-dh)/2,dw,dh); ctx.restore();
+    const g=ctx.createLinearGradient(0,480,0,AH); g.addColorStop(0,"rgba(10,10,10,0)"); g.addColorStop(.55,"rgba(10,10,10,.85)"); g.addColorStop(1,"#0a0a0a");
+    ctx.fillStyle=g; ctx.fillRect(0,480,W,AH-480+2);
+    const t=ctx.createLinearGradient(0,0,0,220); t.addColorStop(0,"rgba(10,10,10,.82)"); t.addColorStop(1,"rgba(10,10,10,0)"); ctx.fillStyle=t; ctx.fillRect(0,0,W,200);
   }
-  const pad=90;
-  ctx.fillStyle="#8a8a8a"; ctx.font='400 30px "IBM Plex Mono", monospace';
+  const pad=90, TW=W-pad*2, TH='"IBM Plex Sans Thai", sans-serif';
+  ctx.fillStyle="#e0e0e0"; ctx.shadowColor="rgba(0,0,0,.7)"; ctx.shadowBlur=12; ctx.font='400 30px "IBM Plex Mono", monospace';
   ctx.fillText(`ROOM ${String(result).padStart(2,"0")} / 12  ·  WHAT'S YOUR INNER ROOM?`, pad, 110);
-  ctx.fillStyle="#ececec"; ctx.font='600 92px "IBM Plex Sans Thai", sans-serif';
-  ctx.fillText(R.en, pad, 1150);
-  ctx.fillRect(pad,1215,4,170);
-  ctx.font='300 52px "IBM Plex Sans Thai", sans-serif';
-  wrap(ctx,"“"+R.quote+"”",pad+36,1270,W-pad*2-40,76);
+  ctx.fillStyle="#ececec"; ctx.font='600 88px '+TH;
+  ctx.fillText(R.en, pad, 800); ctx.shadowBlur=0;
+  // text block: shrink the font until everything fits above the soundtrack
+  const LIMIT=1600; let fs=40, lay;
+  for(;fs>=28;fs-=2){
+    const qf=fs+8, qlh=Math.round(qf*1.45), blh=Math.round(fs*1.5), lab=Math.round(fs*0.8);
+    let y=880;
+    ctx.font=`300 ${qf}px ${TH}`; const qh=wrap(ctx,"“"+R.quote+"”",0,0,TW-40,qlh,true);
+    y+=qh+40;
+    ctx.font=`400 ${fs}px ${TH}`;
+    const h1=wrap(ctx,R.hidden,0,0,TW,blh,true), h2=wrap(ctx,R.deal,0,0,TW,blh,true);
+    const end=y+(lab+30)+h1+44+(lab+30)+h2;
+    lay={qf,qlh,blh,lab,qh,h1,h2};
+    if(end<=LIMIT) break;
+  }
+  const L=lay; let y=880;
+  ctx.fillStyle="#ececec"; ctx.fillRect(pad,y-L.qf+4,4,L.qh);
+  ctx.font=`300 ${L.qf}px ${TH}`; wrap(ctx,"“"+R.quote+"”",pad+36,y,TW-40,L.qlh);
+  y+=L.qh+40;
+  const section=(label,text,hh)=>{
+    ctx.fillStyle="#8a8a8a"; ctx.font=`500 ${L.lab}px ${TH}`; ctx.fillText(label,pad,y+L.lab); y+=L.lab+30;
+    ctx.fillStyle="#d6d6d6"; ctx.font=`400 ${fs}px ${TH}`; wrap(ctx,text,pad,y+fs,TW,L.blh); y+=hh;
+  };
+  section("ความรู้สึกที่ถูกซ่อนเร้น",R.hidden,L.h1); y+=44;
+  section("วิธีรับมือในแบบของคุณ",R.deal,L.h2);
   // soundtrack
-  ctx.strokeStyle="#333"; ctx.beginPath(); ctx.moveTo(pad,1560); ctx.lineTo(W-pad,1560); ctx.stroke();
-  ctx.fillStyle="#8a8a8a"; ctx.font='400 28px "IBM Plex Mono", monospace'; ctx.fillText("SOUNDTRACK",pad,1625);
-  ctx.beginPath(); ctx.arc(pad+50,1720,50,0,Math.PI*2); ctx.fillStyle="#111"; ctx.fill(); ctx.strokeStyle="#555"; ctx.stroke();
-  ctx.beginPath(); ctx.arc(pad+50,1720,7,0,Math.PI*2); ctx.fillStyle="#ececec"; ctx.fill();
-  ctx.fillStyle="#ececec"; ctx.font='600 46px "IBM Plex Sans Thai", sans-serif'; ctx.fillText(R.song,pad+130,1712);
-  ctx.fillStyle="#8a8a8a"; ctx.font='400 32px "IBM Plex Sans Thai", sans-serif'; ctx.fillText("POTATO · DOT / BLACK DOT",pad+130,1762);
+  const S=1680;
+  ctx.strokeStyle="#333"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(pad,S-40); ctx.lineTo(W-pad,S-40); ctx.stroke();
+  ctx.beginPath(); ctx.arc(pad+46,S+80,46,0,Math.PI*2); ctx.fillStyle="#111"; ctx.fill(); ctx.strokeStyle="#555"; ctx.stroke();
+  ctx.beginPath(); ctx.arc(pad+46,S+80,7,0,Math.PI*2); ctx.fillStyle="#ececec"; ctx.fill();
+  ctx.fillStyle="#8a8a8a"; ctx.font='400 26px "IBM Plex Mono", monospace'; ctx.fillText("SOUNDTRACK",pad+124,S+30);
+  ctx.fillStyle="#ececec"; ctx.font='600 44px '+TH; ctx.fillText(R.song,pad+124,S+90);
+  ctx.fillStyle="#8a8a8a"; ctx.font='400 30px '+TH; ctx.fillText("POTATO · DOT / BLACK DOT",pad+124,S+140);
   return c.toDataURL("image/png");
 }
 
